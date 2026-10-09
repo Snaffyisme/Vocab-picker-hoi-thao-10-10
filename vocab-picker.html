@@ -1,0 +1,1018 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vocab Picker — AI-Powered Vocabulary Builder</title>
+<style>
+  :root {
+    --bg: #faf8f4;
+    --surface: #ffffff;
+    --fg: #1c1b18;
+    --fg-muted: #706f6b;
+    --accent: #b5451b;
+    --accent-light: #fdf0eb;
+    --border: #e3dfd8;
+    --radius: 8px;
+    --font-head: 'Playfair Display', Georgia, serif;
+    --font-body: 'Source Sans 3', system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono', 'Courier New', monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #1a1917;
+      --surface: #242220;
+      --fg: #ece9e3;
+      --fg-muted: #8a8780;
+      --accent: #e0623a;
+      --accent-light: #2e1f17;
+      --border: #3a3835;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #1a1917;
+    --surface: #242220;
+    --fg: #ece9e3;
+    --fg-muted: #8a8780;
+    --accent: #e0623a;
+    --accent-light: #2e1f17;
+    --border: #3a3835;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--font-body);
+    min-height: 100%;
+    padding: 0;
+  }
+
+  /* ─── Navigation ─── */
+  nav {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--surface);
+    border-bottom: 1.5px solid var(--border);
+    backdrop-filter: blur(8px);
+  }
+  .nav-inner {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 20px;
+    height: 58px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .nav-logo {
+    font-family: var(--font-head);
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--fg);
+    text-decoration: none;
+    flex-shrink: 0;
+  }
+  .nav-spacer { flex: 1; }
+  .nav-links {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-wrap: wrap;
+  }
+  .nav-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-decoration: none;
+    color: var(--fg);
+    background: transparent;
+    border: 1.5px solid var(--border);
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+  .nav-btn:hover { background: var(--accent-light); border-color: var(--accent); color: var(--accent); }
+  .nav-btn svg { flex-shrink: 0; }
+  .theme-toggle {
+    background: none;
+    border: 1.5px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 9px;
+    cursor: pointer;
+    color: var(--fg-muted);
+    display: flex;
+    align-items: center;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+  }
+  .theme-toggle:hover { background: var(--accent-light); border-color: var(--accent); color: var(--accent); }
+
+  /* ─── Main layout ─── */
+  .container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 40px 20px 80px;
+  }
+
+  /* ─── Hero ─── */
+  .hero {
+    text-align: center;
+    margin-bottom: 48px;
+  }
+  .hero h1 {
+    font-family: var(--font-head);
+    font-size: clamp(1.8rem, 5vw, 2.6rem);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    margin-bottom: 14px;
+  }
+  .hero h1 em {
+    font-style: normal;
+    color: var(--accent);
+  }
+  .hero p {
+    font-size: 1.05rem;
+    color: var(--fg-muted);
+    max-width: 540px;
+    margin: 0 auto;
+    line-height: 1.7;
+  }
+
+  /* ─── Quick Links ─── */
+  .quick-links {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 10px;
+    margin-bottom: 48px;
+  }
+  .quick-link {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 16px;
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    text-decoration: none;
+    color: var(--fg);
+    font-size: 0.88rem;
+    font-weight: 600;
+    transition: border-color 0.15s, background 0.15s, transform 0.1s;
+  }
+  .quick-link:hover {
+    border-color: var(--accent);
+    background: var(--accent-light);
+    transform: translateY(-1px);
+  }
+  .quick-link svg { flex-shrink: 0; color: var(--accent); }
+  .quick-link-desc { display: flex; flex-direction: column; gap: 1px; }
+  .quick-link-label { font-size: 0.82rem; color: var(--fg-muted); font-weight: 400; }
+
+  /* ─── App Card ─── */
+  .app-card {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    padding: 28px 24px;
+    margin-bottom: 48px;
+  }
+  .app-card h2 {
+    font-family: var(--font-head);
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin-bottom: 20px;
+  }
+  .section { margin-bottom: 20px; }
+  label.label {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--fg-muted);
+    margin-bottom: 8px;
+  }
+  .label-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+  .label-row .label { margin-bottom: 0; }
+  .btn-micro {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1.5px solid var(--border);
+    background: var(--surface);
+    color: var(--fg-muted);
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+    font-family: var(--font-body);
+  }
+  .btn-micro:hover { background: var(--accent-light); border-color: var(--accent); color: var(--accent); }
+  .btn-micro.copied { background: var(--accent); border-color: var(--accent); color: #fff; }
+  textarea {
+    width: 100%;
+    min-height: 110px;
+    padding: 12px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--font-body);
+    font-size: 0.95rem;
+    line-height: 1.7;
+    resize: vertical;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  textarea:focus { border-color: var(--accent); }
+  #word-area {
+    background: var(--bg);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px;
+    min-height: 80px;
+    line-height: 2.1;
+    font-size: 0.97rem;
+    color: var(--fg);
+  }
+  .word {
+    cursor: pointer;
+    border-radius: 4px;
+    padding: 1px 5px;
+    margin: 1px 2px;
+    transition: background 0.1s, color 0.1s;
+    display: inline-block;
+  }
+  .word:hover {
+    background: var(--accent-light);
+    color: var(--accent);
+  }
+  .word.noted {
+    background: var(--accent);
+    color: #fff;
+    cursor: default;
+    pointer-events: none;
+  }
+  .word.noted:hover { background: var(--accent); color: #fff; }
+  #vocab-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    min-height: 44px;
+    background: var(--bg);
+    border: 1.5px dashed var(--border);
+    border-radius: var(--radius);
+    padding: 10px 12px;
+    align-items: flex-start;
+  }
+  .vocab-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: var(--accent-light);
+    color: var(--accent);
+    border: 1px solid color-mix(in srgb, var(--accent) 25%, transparent);
+    border-radius: 999px;
+    padding: 3px 10px 3px 12px;
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+  }
+  .vocab-chip button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--accent);
+    font-size: 1rem;
+    line-height: 1;
+    padding: 0;
+    opacity: 0.6;
+    transition: opacity 0.1s;
+    flex-shrink: 0;
+  }
+  .vocab-chip button:hover { opacity: 1; }
+  .empty-note {
+    color: var(--fg-muted);
+    font-size: 0.85rem;
+    font-style: italic;
+    align-self: center;
+  }
+  #vocab-count {
+    font-size: 0.8rem;
+    color: var(--fg-muted);
+    margin-top: 8px;
+  }
+  .actions { display: flex; gap: 10px; flex-wrap: wrap; }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius);
+    padding: 9px 18px;
+    font-family: var(--font-body);
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s, transform 0.1s;
+    letter-spacing: 0.01em;
+  }
+  .btn:hover { opacity: 0.85; }
+  .btn:active { transform: scale(0.97); }
+  .btn:disabled { opacity: 0.4; cursor: default; transform: none; }
+  .btn-ghost {
+    background: transparent;
+    color: var(--fg-muted);
+    border: 1.5px solid var(--border);
+  }
+  .btn-ghost:hover { opacity: 1; background: var(--bg); }
+  #generate-btn.loading { opacity: 0.7; cursor: wait; }
+  #generate-btn.loading::after {
+    content: '';
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border: 2px solid rgba(255,255,255,0.4);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    margin-left: 4px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ─── Guide Section ─── */
+  .guide { margin-bottom: 48px; }
+  .guide h2 {
+    font-family: var(--font-head);
+    font-size: 1.4rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+  .guide-intro {
+    color: var(--fg-muted);
+    font-size: 0.95rem;
+    line-height: 1.7;
+    margin-bottom: 28px;
+    max-width: 620px;
+  }
+  .steps {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    position: relative;
+  }
+  .step {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+  }
+  .step-number {
+    flex-shrink: 0;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .step-body {
+    flex: 1;
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+  }
+  .step-body h3 {
+    font-size: 0.95rem;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+  .step-body p {
+    font-size: 0.88rem;
+    color: var(--fg-muted);
+    line-height: 1.65;
+    margin-bottom: 10px;
+  }
+  .step-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .step-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 11px;
+    background: var(--accent-light);
+    color: var(--accent);
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    text-decoration: none;
+    border: 1px solid color-mix(in srgb, var(--accent) 20%, transparent);
+    transition: opacity 0.15s;
+  }
+  .step-link:hover { opacity: 0.75; }
+  .code-block {
+    background: color-mix(in srgb, var(--fg) 8%, var(--surface));
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    line-height: 1.7;
+    color: var(--fg);
+    white-space: pre-wrap;
+    margin-top: 8px;
+  }
+  .prompt-box {
+    background: color-mix(in srgb, var(--accent) 8%, var(--surface));
+    border: 1.5px solid color-mix(in srgb, var(--accent) 30%, transparent);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    margin-top: 10px;
+  }
+  .prompt-box .label {
+    margin-bottom: 6px;
+  }
+  .prompt-box .code-block {
+    background: color-mix(in srgb, var(--fg) 5%, var(--surface));
+    border-color: color-mix(in srgb, var(--accent) 20%, var(--border));
+    font-size: 0.78rem;
+    margin-top: 0;
+  }
+
+  /* ─── Pro tip ─── */
+  .pro-tip {
+    display: flex;
+    gap: 12px;
+    background: color-mix(in srgb, var(--accent) 8%, var(--surface));
+    border: 1.5px solid color-mix(in srgb, var(--accent) 25%, transparent);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    margin-top: 24px;
+    font-size: 0.85rem;
+    color: var(--fg-muted);
+    line-height: 1.65;
+  }
+  .pro-tip strong { color: var(--accent); }
+  .pro-tip svg { flex-shrink: 0; margin-top: 2px; }
+
+  /* ─── Footer ─── */
+  footer {
+    text-align: center;
+    padding: 24px 20px 32px;
+    border-top: 1.5px solid var(--border);
+    color: var(--fg-muted);
+    font-size: 0.8rem;
+  }
+  footer a { color: var(--fg-muted); text-decoration: underline; }
+
+  /* ─── Toast ─── */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(12px);
+    background: var(--fg);
+    color: var(--bg);
+    padding: 8px 18px;
+    border-radius: 999px;
+    font-size: 0.82rem;
+    font-weight: 500;
+    opacity: 0;
+    transition: opacity 0.2s, transform 0.2s;
+    pointer-events: none;
+    white-space: nowrap;
+    z-index: 200;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Source+Sans+3:wght@400;600&family=JetBrains+Mono:wght@400&display=swap">
+</head>
+<body>
+
+<!-- ─── Navigation ─── -->
+<nav>
+  <div class="nav-inner">
+    <a class="nav-logo" href="#">Vocab Picker</a>
+    <div class="nav-spacer"></div>
+    <div class="nav-links">
+      <a class="nav-btn" href="https://claude.ai" target="_blank" rel="noopener">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+        Claude.ai
+      </a>
+      <a class="nav-btn" href="https://ankimcp.ai" target="_blank" rel="noopener">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+        AnkiMCP
+      </a>
+      <a class="nav-btn" href="https://ankiweb.net" target="_blank" rel="noopener">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+        AnkiWeb
+      </a>
+      <a class="nav-btn" href="https://apps.ankiweb.net" target="_blank" rel="noopener">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Download Anki
+      </a>
+      <button class="theme-toggle" id="theme-toggle" aria-label="Toggle dark mode">
+        <svg id="icon-sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+        <svg id="icon-moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<!-- ─── Hero ─── -->
+<div class="container">
+  <div class="hero">
+    <h1>Build vocabulary with <em>AI flashcards</em></h1>
+    <p>Pick words from any paragraph, export them, and generate AI-powered Anki cards using Claude and AnkiMCP — in minutes.<br><a href="https://naughmilkielts.com/ngan-hang-de-thi/reading" target="_blank" rel="noopener" style="color: var(--fg-muted); font-size: 0.88rem;">IELTS reading passages from naughmilkielts.com</a></p>
+  </div>
+
+  <!-- ─── Quick Links ─── -->
+  <div class="quick-links">
+    <a class="quick-link" href="https://claude.ai" target="_blank" rel="noopener">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+      <div class="quick-link-desc">
+        Claude.ai
+        <span class="quick-link-label">AI assistant</span>
+      </div>
+    </a>
+    <a class="quick-link" href="https://ankimcp.ai" target="_blank" rel="noopener">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+      <div class="quick-link-desc">
+        AnkiMCP
+        <span class="quick-link-label">Claude + Anki bridge</span>
+      </div>
+    </a>
+    <a class="quick-link" href="https://ankiweb.net" target="_blank" rel="noopener">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+      <div class="quick-link-desc">
+        AnkiWeb
+        <span class="quick-link-label">Sync &amp; study online</span>
+      </div>
+    </a>
+    <a class="quick-link" href="https://apps.ankiweb.net" target="_blank" rel="noopener">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      <div class="quick-link-desc">
+        Download Anki
+        <span class="quick-link-label">Free desktop app</span>
+      </div>
+    </a>
+  </div>
+
+  <!-- ─── App ─── -->
+  <div class="app-card">
+    <h2>Vocabulary Picker</h2>
+
+    <div class="section">
+      <div class="label-row">
+        <label class="label" for="input">Paste your paragraph</label>
+        <button class="btn-micro" id="paste-btn" title="Paste from clipboard">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
+          Paste
+        </button>
+      </div>
+      <textarea id="input" placeholder="Paste a paragraph here — words will become clickable.&#10;&#10;Or click &#8220;Load passage&#8221; to fetch one from naughmilkielts.com."></textarea>
+    </div>
+
+    <div class="section">
+      <label class="label">Click words to note them</label>
+      <div id="word-area" aria-live="polite"></div>
+    </div>
+
+    <div class="section">
+      <label class="label">Noted Vocabulary</label>
+      <div id="vocab-list" aria-live="polite">
+        <span class="empty-note">No words noted yet — click words above to collect them.</span>
+      </div>
+      <div id="vocab-count"></div>
+    </div>
+
+    <div class="actions">
+      <button class="btn" id="generate-btn">&#8593; Load passage</button>
+      <button class="btn" id="export-btn" disabled>&#8599; Export as .txt</button>
+      <button class="btn btn-ghost" id="clear-btn" disabled>Clear all</button>
+    </div>
+  </div>
+
+  <!-- ─── Guide ─── -->
+  <div class="guide">
+    <h2>How to create AI flashcards</h2>
+    <p class="guide-intro">Follow these steps to turn any paragraph into smart, AI-generated Anki flashcards using Vocab Picker, Claude, and AnkiMCP.</p>
+
+    <div class="steps">
+      <!-- Step 1 -->
+      <div class="step">
+        <div class="step-number">1</div>
+        <div class="step-body">
+          <h3>Find a paragraph &amp; paste it in</h3>
+          <p>Pick any reading passage — an article, textbook excerpt, IELTS practice text, anything. Paste it into the text area above, or click <strong>"Load passage"</strong> to fetch one automatically from naughmilkielts.com. Each word becomes clickable.</p>
+          <div class="step-links">
+            <a class="step-link" href="https://naughmilkielts.com/ngan-hang-de-thi/reading" target="_blank" rel="noopener">&#8599; Browse all reading tests</a>
+            <a class="step-link" href="https://naughmilkielts.com/chi-tiet-bai-thi/cmk9x7d3j0001aooxw7u1ttdg-passage-1-the-impact-of-the-potato" target="_blank" rel="noopener">&#8599; Try Passage: The Impact of the Potato</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 2 -->
+      <div class="step">
+        <div class="step-number">2</div>
+        <div class="step-body">
+          <h3>Click the words you want to remember</h3>
+          <p>Click each word you don't know or want to memorize. Selected words turn orange and appear in the "Noted Vocabulary" box below. Take your time — only pick the words that matter to you.</p>
+          <p>When you're done, click <strong>Export as .txt</strong> to download your word list.</p>
+        </div>
+      </div>
+
+      <!-- Step 3 -->
+      <div class="step" id="step3">
+        <div class="step-number">3</div>
+        <div class="step-body">
+          <h3>Open Claude and load your word list</h3>
+          <p>Open <a href="https://claude.ai" target="_blank" rel="noopener">Claude.ai</a> and create a new conversation. Paste your exported word list (the .txt file contents).</p>
+          <p>Then copy and paste the prompt below into Claude:</p>
+          <div class="prompt-box">
+            <div class="label-row">
+              <div class="label">Prompt for Claude</div>
+              <button class="btn-micro" id="copy-prompt-btn" title="Copy prompt to clipboard">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                Copy
+              </button>
+            </div>
+            <div class="code-block">Here are some vocabulary words I want to learn:
+
+[PASTE YOUR EXPORTED WORDS HERE]
+
+For each word, create an Anki flashcard using AnkiMCP. Use the create_note tool to add each card to a deck called "Vocabulary". Format each card with:
+- Front: the vocabulary word
+- Back: pronunciation (if applicable), English definition, and an example sentence using the word in context</div>
+          </div>
+          <div class="step-links" style="margin-top:10px">
+            <a class="step-link" href="https://claude.ai" target="_blank" rel="noopener">&#8599; Open Claude.ai</a>
+            <a class="step-link" href="https://ankimcp.ai" target="_blank" rel="noopener">&#8599; Learn about AnkiMCP</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 4 -->
+      <div class="step">
+        <div class="step-number">4</div>
+        <div class="step-body">
+          <h3>Let Claude &amp; AnkiMCP generate your cards</h3>
+          <p>Claude will use AnkiMCP to create flashcard notes directly in Anki. You'll see the cards appear in your Anki deck called "Vocabulary" — no manual card creation needed.</p>
+          <div class="step-links">
+            <a class="step-link" href="https://apps.ankiweb.net" target="_blank" rel="noopener">&#8599; Download Anki</a>
+            <a class="step-link" href="https://ankiweb.net" target="_blank" rel="noopener">&#8599; Open AnkiWeb</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 5 -->
+      <div class="step">
+        <div class="step-number">5</div>
+        <div class="step-body">
+          <h3>Study in Anki</h3>
+          <p>Open Anki on your device, select the "Vocabulary" deck, and start studying. Anki's spaced repetition algorithm will show you each card at the optimal time to maximize long-term retention.</p>
+          <div class="step-links">
+            <a class="step-link" href="https://apps.ankiweb.net" target="_blank" rel="noopener">&#8599; Download Anki</a>
+            <a class="step-link" href="https://ankiweb.net" target="_blank" rel="noopener">&#8599; AnkiWeb sync</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="pro-tip">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <div><strong>Pro tip:</strong> For the best results, paste the full paragraph along with your word list into Claude. This gives Claude context to write more accurate, sentence-based definitions that match the passage's meaning.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── Footer ─── -->
+<footer>
+  <p>Built with <a href="https://claude.ai" target="_blank" rel="noopener">Claude</a> &amp; <a href="https://ankimcp.ai" target="_blank" rel="noopener">AnkiMCP</a> &mdash; Vocab Picker &copy; 2025</p>
+</footer>
+
+<!-- ─── Toast ─── -->
+<div class="toast" id="toast"></div>
+
+<script>
+  const input     = document.getElementById('input');
+  const wordArea  = document.getElementById('word-area');
+  const vocabList = document.getElementById('vocab-list');
+  const countEl   = document.getElementById('vocab-count');
+  const exportBtn = document.getElementById('export-btn');
+  const clearBtn  = document.getElementById('clear-btn');
+  const generateBtn = document.getElementById('generate-btn');
+  const toastEl   = document.getElementById('toast');
+  const themeToggle = document.getElementById('theme-toggle');
+  const iconSun    = document.getElementById('icon-sun');
+  const iconMoon   = document.getElementById('icon-moon');
+  let noted = new Set();
+
+  /* ─── Dark mode ─── */
+  function applyTheme(dark) {
+    if (dark) {
+      document.documentElement.setAttribute('data-theme', 'dark');
+      iconSun.style.display  = 'none';
+      iconMoon.style.display = '';
+    } else {
+      document.documentElement.removeAttribute('data-theme');
+      iconSun.style.display  = '';
+      iconMoon.style.display = 'none';
+    }
+  }
+  (function() {
+    const stored = localStorage.getItem('vp-theme');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    applyTheme(stored === 'dark' || (!stored && prefersDark));
+  })();
+  themeToggle.addEventListener('click', function() {
+    const isDark = document.documentElement.hasAttribute('data-theme');
+    applyTheme(!isDark);
+    localStorage.setItem('vp-theme', !isDark ? 'dark' : 'light');
+  });
+
+  /* ─── Load passage from naughmilkielts ─── */
+  var passageIndex = parseInt(localStorage.getItem('vp-passage-index') || '0');
+
+  /* Known passage URLs — newest first. Updated automatically when the site listing is reachable. */
+  const KNOWN_PASSAGES = [
+    'https://naughmilkielts.com/chi-tiet-bai-thi/cmk9x7d3j0001aooxw7u1ttdg-passage-1-the-impact-of-the-potato',
+    'https://naughmilkielts.com/chi-tiet-bai-thi/cmm228i2n0009aos78b54ow5j-passage-1-william-gilbert-and-magnetism',
+    'https://naughmilkielts.com/chi-tiet-bai-thi/cmkqpyz1c0003aok4k2js4sqj-full-real-reading-test-000001',
+  ];
+
+  async function generateReadingTest() {
+    generateBtn.classList.add('loading');
+    generateBtn.disabled = true;
+    showToast('Fetching passage...');
+
+    let passage = null;
+    let sourceName = '';
+
+    /* Try CORS proxies in order */
+    const proxies = [
+      u => `https://corsproxy.io/?${encodeURIComponent(u)}`,
+      u => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
+    ];
+
+    for (const makeProxy of proxies) {
+      try {
+        /* Step 1: Fetch listing page and extract passage links */
+        const listRes = await fetch(makeProxy('https://naughmilkielts.com/ngan-hang-de-thi/reading'));
+        const listHtml = await listRes.text();
+        const linkMatches = [...listHtml.matchAll(/href="(\/chi-tiet-bai-thi\/[^"]+)"/g)];
+        const liveLinks = [...new Set(
+          linkMatches.map(m => 'https://naughmilkielts.com' + m[1])
+        )].filter(h => h.includes('/chi-tiet-bai-thi/') && !h.includes('ngan-hang-de-thi'));
+
+        if (liveLinks.length > 0) {
+          /* Use live links, cycling through them */
+          const url = liveLinks[passageIndex % liveLinks.length];
+          passageIndex++;
+          localStorage.setItem('vp-passage-index', String(passageIndex));
+          sourceName = 'naughmilkielts.com';
+
+          const articleRes = await fetch(makeProxy(url));
+          const articleHtml = await articleRes.text();
+          passage = extractPassage(articleHtml);
+          if (passage) break;
+        }
+      } catch (e) {
+        /* Try next proxy */
+        console.warn('Proxy failed:', e);
+      }
+    }
+
+    /* Fallback: use hardcoded known passages */
+    if (!passage) {
+      const url = KNOWN_PASSAGES[passageIndex % KNOWN_PASSAGES.length];
+      passageIndex++;
+      localStorage.setItem('vp-passage-index', String(passageIndex));
+      sourceName = 'naughmilkielts.com (cached)';
+
+      for (const makeProxy of proxies) {
+        try {
+          const res = await fetch(makeProxy(url));
+          const html = await res.text();
+          passage = extractPassage(html);
+          if (passage) break;
+        } catch (e) {
+          console.warn('Fallback proxy failed:', e);
+        }
+      }
+    }
+
+    if (passage) {
+      input.value = passage;
+      renderWords(passage);
+      showToast('Passage loaded!');
+    } else {
+      showToast('Failed to load — check your internet connection');
+    }
+
+    generateBtn.classList.remove('loading');
+    generateBtn.disabled = false;
+  }
+
+  function extractPassage(html) {
+    /* Remove scripts and styles first */
+    let clean = html
+      .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+      .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '');
+
+    /* Strategy 1: Try to isolate the passage area by removing the questions section.
+       Vietnamese IELTS sites typically put reading questions after the passage. */
+    const qSectionMatch = clean.match(/<div[^>]*(?:câu_hỏi|cau_hoi|questions?)[^>]*>/i);
+    if (qSectionMatch) {
+      clean = clean.substring(0, clean.indexOf(qSectionMatch[0]));
+    }
+
+    /* Strategy 2: Extract <p> tags with substantial English text (the actual passage) */
+    const paraMatches = [...clean.matchAll(/<p[^>]*>([\s\S]*?)<\/p>/gi)];
+    const paragraphs = paraMatches
+      .map(m => m[1])
+      .map(s => s
+        .replace(/<[^>]+>/g, ' ')
+        .replace(/&nbsp;/g, ' ')
+        .replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&quot;/g, '"')
+        .replace(/\s{2,}/g, ' ')
+        .trim())
+      .filter(s => {
+        /* Must have real English words (vowels), at least 30 chars, not a question label */
+        return s.length > 30
+          && /[aeiouAEIOU]{3,}/i.test(s)
+          && !/^(question|answer|a\)|b\)|c\)|d\)|đáp án|lời giải)/i.test(s)
+          && !/^section\s*\d/i.test(s);
+      });
+
+    if (paragraphs.length > 2) {
+      return paragraphs.join('\n\n');
+    }
+
+    /* Strategy 3: Strip all HTML and find English paragraph blocks */
+    const stripped = clean
+      .replace(/<[^>]+>/g, '\n')
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/['"]/g, "'")
+      .replace(/\n{3,}/g, '\n\n');
+
+    const lines = stripped.split('\n')
+      .map(l => l.trim())
+      .filter(l => {
+        return l.length > 40
+          && /[aeiouAEIOU]{3,}/i.test(l)
+          && !/^(question|answer|\d+\.)/i.test(l)
+          && !/lock_open|workspace_premium|Miễn phí|Premium/i.test(l);
+      });
+
+    return lines.slice(0, 25).join('\n\n');
+  }
+
+  generateBtn.addEventListener('click', generateReadingTest);
+
+  /* ─── Render words ─── */
+  function renderWords(text) {
+    const tokens = text.trim().split(/(\s+)/);
+    wordArea.innerHTML = tokens.map(t => {
+      if (/^\s+$/.test(t)) return t;
+      const esc = t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      const cls = noted.has(t) ? 'word noted' : 'word';
+      return '<span class="' + cls + '" data-word="' + esc + '">' + esc + '</span>';
+    }).join('');
+  }
+
+  /* ─── Render vocab ─── */
+  function renderVocab() {
+    const words = [...noted];
+    if (words.length === 0) {
+      vocabList.innerHTML = '<span class="empty-note">No words noted yet — click words above to collect them.</span>';
+      countEl.textContent = '';
+      exportBtn.disabled = true;
+      clearBtn.disabled  = true;
+    } else {
+      vocabList.innerHTML = words.map(w => {
+        const esc = w.replace(/&/g,'&amp;').replace(/"/g,'&quot;');
+        return '<span class="vocab-chip">' + esc + '<button aria-label="Remove ' + esc + '" data-word="' + esc + '">&times;</button></span>';
+      }).join('');
+      countEl.textContent = words.length + ' word' + (words.length !== 1 ? 's' : '') + ' noted';
+      exportBtn.disabled = false;
+      clearBtn.disabled  = false;
+    }
+    wordArea.querySelectorAll('.word').forEach(function(el) {
+      el.className = noted.has(el.dataset.word) ? 'word noted' : 'word';
+    });
+  }
+
+  /* ─── Paste & Copy helpers ─── */
+  var toastTimer;
+  function showToast(msg) {
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function() { toastEl.classList.remove('show'); }, 1800);
+  }
+
+  function flashCopied(btn) {
+    var orig = btn.innerHTML;
+    btn.classList.add('copied');
+    btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Copied';
+    setTimeout(function() {
+      btn.classList.remove('copied');
+      btn.innerHTML = orig;
+    }, 1500);
+  }
+
+  /* ─── Paste button ─── */
+  document.getElementById('paste-btn').addEventListener('click', async function() {
+    try {
+      var text = await navigator.clipboard.readText();
+      if (input.value && !input.value.startsWith(text.split('\n')[0].slice(0,20))) {
+        input.value = input.value.trim() + '\n\n' + text;
+      } else {
+        input.value = text;
+      }
+      renderWords(input.value);
+      showToast('Pasted!');
+    } catch (err) {
+      showToast('Paste failed — check browser permissions');
+    }
+  });
+
+  /* ─── Copy prompt button ─── */
+  document.getElementById('copy-prompt-btn').addEventListener('click', async function() {
+    var codeBlock = document.querySelector('#step3 .code-block');
+    if (!codeBlock) return;
+    var words = [...noted].join('\n');
+    var prompt = 'Here are some vocabulary words I want to learn:\n\n' + (words || '[PASTE YOUR EXPORTED WORDS HERE]') + '\n\nFor each word, create an Anki flashcard using AnkiMCP. Use the create_note tool to add each card to a deck called "Vocabulary". Format each card with:\n- Front: the vocabulary word\n- Back: pronunciation (if applicable), English definition, and an example sentence using the word in context';
+    try {
+      await navigator.clipboard.writeText(prompt);
+      flashCopied(this);
+    } catch (err) {
+      showToast('Copy failed — check browser permissions');
+    }
+  });
+
+  /* ─── Events ─── */
+  input.addEventListener('input', function() { renderWords(input.value); });
+  wordArea.addEventListener('click', function(e) {
+    var span = e.target.closest('.word');
+    if (!span || span.classList.contains('noted')) return;
+    noted.add(span.dataset.word);
+    renderVocab();
+  });
+  vocabList.addEventListener('click', function(e) {
+    var btn = e.target.closest('button');
+    if (!btn) return;
+    noted.delete(btn.dataset.word);
+    renderVocab();
+  });
+  exportBtn.addEventListener('click', function() {
+    var content = [...noted].join('\n');
+    var blob = new Blob([content], { type: 'text/plain' });
+    var url  = URL.createObjectURL(blob);
+    var a    = document.createElement('a');
+    a.href     = url;
+    a.download = 'vocabulary.txt';
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('vocabulary.txt downloaded');
+  });
+  clearBtn.addEventListener('click', function() {
+    noted.clear();
+    renderVocab();
+    showToast('Cleared');
+  });
+  renderVocab();
+</script>
+</body>
+</html>
